@@ -17,16 +17,32 @@
 
 package org.apache.spark.sql.hive.llap
 
-import org.apache.spark.sql.SQLContext
+import com.hortonworks.spark.sql.hive.llap.{DefaultJDBCWrapper, LlapRelation}
+
+import org.apache.spark.sql._
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.sources.RelationProvider
 
-class DefaultSource
-  // TODO: with SchemaRelationProvider, CreatableRelationProvider?
-  extends RelationProvider {
+class DefaultSource extends RelationProvider {
 
-  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String]): BaseRelation = {
-    var result = new LlapRelation(sqlContext, parameters)
-    result
+  override def createRelation(sqlContext: SQLContext, parameters: Map[String, String])
+      : BaseRelation = {
+    val sessionState = sqlContext.sparkSession.sessionState
+    val getConnectionUrlMethod = sessionState.getClass.
+      getMethod("getConnectionUrl", classOf[SparkSession])
+    val connectionUrl = getConnectionUrlMethod.
+      invoke(sessionState, sqlContext.sparkSession).toString()
+    val getUserMethod = sessionState.getClass.getMethod("getUser")
+    val user = getUserMethod.invoke(sessionState).toString()
+    val dbcp2Config = sqlContext.getConf("spark.sql.hive.llap.dbcp2", null)
+    val params = parameters +
+      ("user.name" -> user) +
+      ("user.password" -> "password") +
+      ("dbcp2.conf" -> dbcp2Config) +
+      ("url" -> connectionUrl)
+
+    LlapRelation(
+      sqlContext,
+      params)
   }
 }
