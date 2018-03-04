@@ -31,8 +31,8 @@ class LlapSessionStateBuilder(sparkSession: SparkSession, parentState: Option[Se
    */
   override protected lazy val catalog: LlapSessionCatalog = {
     val catalog = new LlapSessionCatalog(
-      sparkSession.sharedState.externalCatalog.asInstanceOf[LlapExternalCatalog],
-      session.sharedState.globalTempViewManager,
+      () => sparkSession.sharedState.externalCatalog.asInstanceOf[LlapExternalCatalog],
+      () => session.sharedState.globalTempViewManager,
       new HiveMetastoreCatalog(session),
       sparkSession,
       resourceLoader,

@@ -37,8 +37,8 @@ import org.apache.spark.sql.internal.SQLConf
 
 
 private[sql] class LlapSessionCatalog(
-    externalCatalog: LlapExternalCatalog,
-    globalTempViewManager: GlobalTempViewManager,
+    externalCatalogBuilder: () => LlapExternalCatalog,
+    globalTempViewManagerBuilder: () => GlobalTempViewManager,
     metastoreCatalog: HiveMetastoreCatalog,
     sparkSession: SparkSession,
     functionResourceLoader: FunctionResourceLoader,
@@ -47,8 +47,8 @@ private[sql] class LlapSessionCatalog(
     parser: ParserInterface,
     hadoopConf: Configuration)
   extends HiveSessionCatalog(
-      externalCatalog,
-      globalTempViewManager,
+      externalCatalogBuilder,
+      globalTempViewManagerBuilder,
       metastoreCatalog,
       functionRegistry,
       conf,
