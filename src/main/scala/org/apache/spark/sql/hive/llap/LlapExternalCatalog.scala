@@ -147,7 +147,11 @@ private[spark] class LlapExternalCatalog(
 
   override def databaseExists(db: String): Boolean = {
     val sparkSession = SparkSession.getActiveSession
-    if (sparkSession.isDefined) {
+    if (db.equalsIgnoreCase(SessionCatalog.DEFAULT_DATABASE)) {
+      // SPARK-296: If STS starts before Ranger policies get ready, STS fails.
+      // For SPARK-LLAP scenario, we assume that `default` always exists.
+      true
+    } else if (sparkSession.isDefined) {
       var isExist = false
       tryWithResource(createConnection()) { conn =>
         tryWithResource(conn.createStatement()) { stmt =>
@@ -164,14 +168,7 @@ private[spark] class LlapExternalCatalog(
       }
       isExist
     } else {
-      // This happens only once at the initialization of SparkSession.
-      // Spark checks `default` database at the beginning and creates it if not exists.
-      // However, if SparkSession is not created yet, we cannot access SessionState having
-      // connection string and user name. Here, we know that Spark-LLAP always access the
-      // existing Hive databases. So, we returns true for that. Also, Spark checks
-      // `global_temp` database and raises exceptions if it exists. For this one,
-      // we simply assume that it doesn't exist.
-      db.equalsIgnoreCase(SessionCatalog.DEFAULT_DATABASE)
+      false
     }
   }
 
